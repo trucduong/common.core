@@ -11,7 +11,6 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import core.dao.entities.IEntity;
@@ -26,14 +25,14 @@ public class BaseDao<E extends IEntity> implements Serializable {
 	private EntityManager em;
 	private Class<E> persistentClass;
 
-	@Transactional
+	//@Transactional
 	public void delete(long id) {
 		E entity = find(id);
 		remove(entity);
 		getEm().flush();
 	}
 	
-	@Transactional
+	//@Transactional
 	public void deleteBy(String name, Object value) {
 		StringBuilder strQuery = new StringBuilder(" DELETE FROM ").append(getClassName()).append(" WHERE ")
 				.append(name).append(" = ").append(formatParam(value));
@@ -41,14 +40,14 @@ public class BaseDao<E extends IEntity> implements Serializable {
 		query.executeUpdate();
 	}
 
-	@Transactional
+	//@Transactional
 	public void deleteAllData() {
 		String strQuery = " DELETE FROM " + getClassName();
 		Query query = getEm().createQuery(strQuery);
 		query.executeUpdate();
 	}
 
-	@Transactional
+	//@Transactional
 	public void deleteAllData(Class<?>[] classArr) {
 		for (Class<?> entityClass : classArr) {
 			String strQuery = " DELETE FROM " + entityClass.getSimpleName();
@@ -57,14 +56,14 @@ public class BaseDao<E extends IEntity> implements Serializable {
 		}
 	}
 
-	@Transactional
+	//@Transactional
 	public void create(E entity) {
 		persist(entity);
 		getEm().flush();
 	}
 
 	@SuppressWarnings("unchecked")
-	@Transactional
+	//@Transactional
 	public void createMultipleRows(E... entities) {
 		for (E entity : entities) {
 			persist(entity);
@@ -72,7 +71,7 @@ public class BaseDao<E extends IEntity> implements Serializable {
 		getEm().flush();
 	}
 
-	@Transactional
+	//@Transactional
 	public void update(E entity) {
 		merge(entity);
 		getEm().flush();

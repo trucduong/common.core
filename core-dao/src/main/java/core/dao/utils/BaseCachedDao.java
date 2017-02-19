@@ -5,7 +5,6 @@ import java.util.List;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import core.dao.entities.BaseCachedEntity;
@@ -16,7 +15,7 @@ public class BaseCachedDao<E extends BaseCachedEntity> extends BaseDao<E> {
 	protected static final String DELETED = " AND e.deleted=TRUE";
 
 	@Override
-	@Transactional
+//	//@Transactional
 	public void delete(long id) {
 		E entity = find(id);
 		entity.setDeleted(true);
@@ -29,7 +28,7 @@ public class BaseCachedDao<E extends BaseCachedEntity> extends BaseDao<E> {
 	}
 	
 	@Override
-	@Transactional
+	//@Transactional
 	public void deleteBy(String name, Object value) {
 		StringBuilder strQuery = new StringBuilder(" UPDATE ").append(getClassName()).append(" SET deleted=TRUE ").append(" WHERE ")
 				.append(name).append(" = ").append(formatParam(value));
@@ -42,7 +41,7 @@ public class BaseCachedDao<E extends BaseCachedEntity> extends BaseDao<E> {
 	}
 
 	@Override
-	@Transactional
+	//@Transactional
 	public void deleteAllData() {
 		String strQuery = " UPDATE " + getClassName() + " SET deleted=TRUE";
 		Query query = getEm().createQuery(strQuery);

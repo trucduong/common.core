@@ -3,12 +3,10 @@ package core.dao.search;
 import java.util.Arrays;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-
 public class SearchConditionHelper {
-	public static SearchCondition getSearchCondition(HttpServletRequest request) {
+	public static SearchCondition getSearchCondition(Map<String, String[]> params) {
 		SearchCondition searchInfo = new SearchCondition();
-		Map<String, String[]> params = request.getParameterMap();
+//		Map<String, String[]> params = request.getParameterMap();
 		if (params.containsKey(SearchCondition.FILTER_PARAM)) {
 			String filterStr = Arrays.toString(params.get(SearchCondition.FILTER_PARAM));
 			String[] filters = filterStr.split(",");
