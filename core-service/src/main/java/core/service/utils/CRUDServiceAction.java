@@ -1,11 +1,10 @@
 package core.service.utils;
 
 import java.util.HashMap;
-import java.util.Map;
 
 import org.springframework.core.env.Environment;
 
-public class CRUDServiceAction implements IServiceAction {
+public abstract class CRUDServiceAction extends AbstractServiceAction {
 	public static final String PARAM_ID = "id";
 	public static final String PARAM_NAME = "name";
 	public static final String PARAM_VALUE = "value";
@@ -19,38 +18,6 @@ public class CRUDServiceAction implements IServiceAction {
 	public static final String CREATE = "/create";
 	public static final String UPDATE = "/update/{id}";
 	public static final String DELETE = "/delete/{id}";
-	
-	
-	protected String url;
-	protected Map<String, Object> params;
-	protected Object data;
-
-	@Override
-	public String getUrl() {
-		return url;
-	}
-
-	@Override
-	public Map<String, Object> getParams() {
-		return params;
-	}
-
-	@Override
-	public Object getData() {
-		return data;
-	}
-	
-	// Child class overwrite
-	@Override
-	public String getServerName() {
-		return null;
-	}
-
-	// Child class overwrite
-	@Override
-	public String getServerUrl() {
-		return null;
-	}
 	
 	public IServiceAction read(Environment env, String id) {
 		this.url = new StringBuilder(env.getProperty(getServerUrl()))
