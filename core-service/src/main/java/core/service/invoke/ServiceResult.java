@@ -1,4 +1,6 @@
-package core.service.utils;
+package core.service.invoke;
+
+import core.common.format.json.JsonFormatter;
 
 public class ServiceResult {
 	public static final String SUCCESS = "success";
@@ -34,5 +36,9 @@ public class ServiceResult {
 
 	public boolean isSuccess() {
 		return SUCCESS.equals(this.type);
+	}
+	
+	public static <T> T getValue(ServiceResult result, Class<T> classOfT) {
+		return JsonFormatter.fromJson(result.getValue(), classOfT);
 	}
 }

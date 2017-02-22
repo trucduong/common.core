@@ -1,4 +1,4 @@
-package core.dao.utils;
+package core.dao.query;
 
 import java.util.HashMap;
 import java.util.Map;

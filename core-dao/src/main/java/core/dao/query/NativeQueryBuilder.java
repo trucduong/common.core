@@ -1,4 +1,4 @@
-package core.dao.utils;
+package core.dao.query;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;

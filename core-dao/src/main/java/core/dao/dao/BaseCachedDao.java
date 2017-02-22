@@ -1,4 +1,4 @@
-package core.dao.utils;
+package core.dao.dao;
 
 import java.util.List;
 
@@ -15,12 +15,10 @@ public class BaseCachedDao<E extends BaseCachedEntity> extends BaseDao<E> {
 	protected static final String DELETED = " AND e.deleted=TRUE";
 
 	@Override
-//	//@Transactional
-	public void delete(long id) {
+	public void delete(Object id) {
 		E entity = find(id);
 		entity.setDeleted(true);
-		merge(entity);
-		getEm().flush();
+		getEm().merge(entity);
 	}
 	
 	public void hardDelete(long id) {
@@ -28,12 +26,11 @@ public class BaseCachedDao<E extends BaseCachedEntity> extends BaseDao<E> {
 	}
 	
 	@Override
-	//@Transactional
-	public void deleteBy(String name, Object value) {
+	public long deleteBy(String name, Object value) {
 		StringBuilder strQuery = new StringBuilder(" UPDATE ").append(getClassName()).append(" SET deleted=TRUE ").append(" WHERE ")
 				.append(name).append(" = ").append(formatParam(value));
 		Query query = getEm().createQuery(strQuery.toString());
-		query.executeUpdate();
+		return query.executeUpdate();
 	}
 	
 	public void hardDeleteBy(String name, Object value) {
@@ -42,10 +39,10 @@ public class BaseCachedDao<E extends BaseCachedEntity> extends BaseDao<E> {
 
 	@Override
 	//@Transactional
-	public void deleteAllData() {
+	public long deleteAllData() {
 		String strQuery = " UPDATE " + getClassName() + " SET deleted=TRUE";
 		Query query = getEm().createQuery(strQuery);
-		query.executeUpdate();
+		return query.executeUpdate();
 	}
 	
 	public void hardDeleteAllData() {
@@ -101,49 +98,6 @@ public class BaseCachedDao<E extends BaseCachedEntity> extends BaseDao<E> {
 		TypedQuery<E> query = getEm().createQuery(strQuery, entityClass);
 		return query.getResultList();
 	}
-
-	@Override
-	public int deleteAllDataByColumn(String name, Object value) {
-		String className = getClassName();
-		String strQuery = " UPDATE " + className + " e SET e.deleted=TRUE " + " WHERE e." + name + " = ?1";
-		Query query = getEm().createQuery(strQuery).setParameter(1, value);
-		return query.executeUpdate();
-	}
-
-	@Override
-	public int deleteAllDataByColumns(String[] names, Object[] values) {
-		String className = getClassName();
-		String strQuery = " UPDATE " + className + " e SET e.deleted=TRUE" + " WHERE e.";// +
-																			// name
-																			// +
-																			// "
-																			// =
-																			// ?1";
-		String andCondition = " AND e.";
-		int i = 0;
-		for (String name : names) {
-			Object value = values[i++];
-			if (value == null) {
-				strQuery += name + " is null" + andCondition;
-			} else {
-				strQuery += name + " = ?" + i + andCondition;
-			}
-		}
-
-		int endIndex = strQuery.lastIndexOf(andCondition);
-		strQuery = strQuery.substring(0, endIndex);
-
-		Query query = getEm().createQuery(strQuery);
-		int j = 0;
-		for (Object value : values) {
-			j++;
-			if (value != null) {
-				query.setParameter(j, value);
-			}
-		}
-		return query.executeUpdate();
-	}
-
 
 	@Override
 	@SuppressWarnings("unchecked")

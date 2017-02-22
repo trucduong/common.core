@@ -58,10 +58,7 @@ public abstract class BaseEntity implements Serializable, IEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id", columnDefinition = LONG)
-	protected long id = 0;
-	
-//	@Column(name = "tenant", columnDefinition = SHORT_1)
-//	private String tenant;
+	protected Long id = 0L;
 
 	@Version
 	@Column(name = "version")
@@ -74,33 +71,31 @@ public abstract class BaseEntity implements Serializable, IEntity {
 		return version;
 	}
 
-	public long getId() {
+	public Long getId() {
 		return id;
 	}
 	
-	public void setId(long id) {
+	public void setId(Long id) {
 		this.id = id;
 	}
-	
-//	public String getTenant() {
-//		return tenant;
-//	}
-//	
-//	public void setTenant(String tenant) {
-//		this.tenant = tenant;
-//	}
 
 	@Override
 	public void bind(BaseDto baseDto) {
-		this.id = baseDto.getId();
-//		this.version =dto.getVersion();
-//		this.tenant = baseDto.getTenant();
+		this.id = (Long) baseDto.getId();
 	}
 
 	@Override
 	public void unBind(BaseDto baseDto) {
 		baseDto.setId(id);
-//		baseDto.setTenant(tenant);
-//		dto.setVersion(version);
+	}
+	
+	@Override
+	public Object getEntityId() {
+		return getId();
+	}
+	
+	@Override
+	public void setEntityId(Object id) {
+		this.id = (Long) id;
 	}
 }

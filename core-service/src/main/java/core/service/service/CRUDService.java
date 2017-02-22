@@ -1,4 +1,4 @@
-package core.service.services;
+package core.service.service;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,12 +11,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import core.common.exception.CommonException;
 import core.common.utils.CommonConstants;
+import core.dao.dao.BaseDao;
 import core.dao.dto.BaseDto;
 import core.dao.entities.IEntity;
-import core.dao.utils.BaseDao;
-import core.service.utils.CRUDServiceAction;
+import core.service.action.CRUDServiceActionConst;
+import core.service.invoke.ServiceResult;
 import core.service.utils.ServiceErrorCode;
-import core.service.utils.ServiceResult;
 
 public abstract class CRUDService<E extends IEntity, D extends BaseDto> extends BaseService {
 
@@ -44,8 +44,8 @@ public abstract class CRUDService<E extends IEntity, D extends BaseDto> extends 
 	
 	protected void onAfterCreate(E entity) {}
 
-	@RequestMapping(value = CRUDServiceAction.READ, method = RequestMethod.GET)
-	public ServiceResult read(@PathVariable(value = CRUDServiceAction.PARAM_ID) long id) throws CommonException {
+	@RequestMapping(value = CRUDServiceActionConst.READ, method = RequestMethod.GET)
+	public ServiceResult read(@PathVariable(value = CRUDServiceActionConst.PARAM_ID) long id) throws CommonException {
 		init(ServiceErrorCode.NOT_FOUND);
 		E entity = getDao().find(id);
 
@@ -59,7 +59,7 @@ public abstract class CRUDService<E extends IEntity, D extends BaseDto> extends 
 		return success(dto);
 	}
 
-	@RequestMapping(value = CRUDServiceAction.READ_ALL, method = RequestMethod.GET)
+	@RequestMapping(value = CRUDServiceActionConst.READ_ALL, method = RequestMethod.GET)
 	public ServiceResult readAll() throws CommonException {
 		init(ServiceErrorCode.NOT_FOUND);
 		List<E> entities = getDao().getAllData();
@@ -78,9 +78,9 @@ public abstract class CRUDService<E extends IEntity, D extends BaseDto> extends 
 		return success(dtos);
 	}
 
-	@RequestMapping(value = CRUDServiceAction.READ_ALL_BY, method = RequestMethod.GET)
-	public ServiceResult readAllBy(@PathVariable(value = CRUDServiceAction.PARAM_NAME) String name,
-			@PathVariable(value = CRUDServiceAction.PARAM_VALUES) String values) throws CommonException {
+	@RequestMapping(value = CRUDServiceActionConst.READ_ALL_BY, method = RequestMethod.GET)
+	public ServiceResult readAllBy(@PathVariable(value = CRUDServiceActionConst.PARAM_NAME) String name,
+			@PathVariable(value = CRUDServiceActionConst.PARAM_VALUES) String values) throws CommonException {
 		init(ServiceErrorCode.NOT_FOUND);
 
 		String[] valueList = values.split(CommonConstants.SEPERATOR);
@@ -100,9 +100,9 @@ public abstract class CRUDService<E extends IEntity, D extends BaseDto> extends 
 		return success(dtos);
 	}
 
-	@RequestMapping(value = CRUDServiceAction.READ_BY, method = RequestMethod.GET)
-	public ServiceResult readBy(@PathVariable(value = CRUDServiceAction.PARAM_NAME) String name,
-			@PathVariable(value = CRUDServiceAction.PARAM_VALUE) String value) throws CommonException {
+	@RequestMapping(value = CRUDServiceActionConst.READ_BY, method = RequestMethod.GET)
+	public ServiceResult readBy(@PathVariable(value = CRUDServiceActionConst.PARAM_NAME) String name,
+			@PathVariable(value = CRUDServiceActionConst.PARAM_VALUE) String value) throws CommonException {
 		init(ServiceErrorCode.NOT_FOUND);
 		List<E> entities = getDao().getAllDataByColumn(name, value);
 
@@ -116,7 +116,7 @@ public abstract class CRUDService<E extends IEntity, D extends BaseDto> extends 
 		return success(dto);
 	}
 
-	@RequestMapping(value = CRUDServiceAction.CREATE, method = RequestMethod.POST)
+	@RequestMapping(value = CRUDServiceActionConst.CREATE, method = RequestMethod.POST)
 	public ServiceResult create(@RequestBody D dto) throws CommonException {
 		init(ServiceErrorCode.CREATE_ERROR);
 		dto.setId(0);
@@ -129,7 +129,7 @@ public abstract class CRUDService<E extends IEntity, D extends BaseDto> extends 
 		return success(dto);
 	}
 
-	@RequestMapping(value = CRUDServiceAction.UPDATE, method = RequestMethod.POST)
+	@RequestMapping(value = CRUDServiceActionConst.UPDATE, method = RequestMethod.POST)
 	public ServiceResult update(@RequestBody D dto, @PathVariable("id") long id, @RequestParam(name="action", required=false, defaultValue="") String action) throws CommonException {
 		init(ServiceErrorCode.UPDATE_ERROR);
 		E entity = getDao().find(id);
@@ -142,7 +142,7 @@ public abstract class CRUDService<E extends IEntity, D extends BaseDto> extends 
 		return success(dto);
 	}
 
-	@RequestMapping(value = CRUDServiceAction.DELETE, method = RequestMethod.POST)
+	@RequestMapping(value = CRUDServiceActionConst.DELETE, method = RequestMethod.POST)
 	public ServiceResult delete(@PathVariable("id") long id) throws CommonException {
 		init(ServiceErrorCode.DELTE_ERROR);
 		getDao().delete(id);

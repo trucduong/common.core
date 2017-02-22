@@ -1,4 +1,4 @@
-package core.service.services;
+package core.service.service;
 
 import javax.persistence.PersistenceException;
 
@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import core.common.exception.CommonException;
 import core.common.format.json.JsonFormatter;
+import core.service.invoke.ServiceHelper;
+import core.service.invoke.ServiceResult;
 import core.service.utils.ServiceErrorCode;
-import core.service.utils.ServiceProvider;
-import core.service.utils.ServiceResult;
 
 public abstract class BaseService {
 	protected Logger LOGGER = LoggerFactory.getLogger(getThis());
@@ -31,7 +31,7 @@ public abstract class BaseService {
 	}
 
 	protected ServiceResult success(String value) {
-		return ServiceProvider.success(value);
+		return ServiceHelper.success(value);
 	}
 
 	protected ServiceResult success(Object obj) {
@@ -40,15 +40,15 @@ public abstract class BaseService {
 	}
 
 	protected ServiceResult error(String errorCode) {
-		return ServiceProvider.error(errorCode);
+		return ServiceHelper.error(errorCode);
 	}
 
 	protected ServiceResult error(String errorCode, String description) {
-		return ServiceProvider.error(errorCode, description);
+		return ServiceHelper.error(errorCode, description);
 	}
 	
 	protected ServiceResult error(String errorCode, Object description) {
-		return ServiceProvider.error(errorCode, JsonFormatter.toJson(description));
+		return ServiceHelper.error(errorCode, JsonFormatter.toJson(description));
 	}
 
 	@ExceptionHandler({ CommonException.class })

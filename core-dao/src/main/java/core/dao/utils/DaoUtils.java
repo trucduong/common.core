@@ -8,6 +8,7 @@ import javax.persistence.EntityManager;
 
 import core.common.convert.Converter;
 import core.common.reflect.ObjectModifier;
+import core.dao.query.QueryBuilder;
 
 public class DaoUtils {
 
@@ -47,6 +48,10 @@ public class DaoUtils {
 			}
 		}
 		return list;
+	}
+	
+	public long execute(EntityManager entityManager, QueryBuilder builder) {
+		return builder.build(entityManager).executeUpdate();
 	}
 
 	public static <T> T convert(Class<T> cls, String[] columns, Object[] objects,

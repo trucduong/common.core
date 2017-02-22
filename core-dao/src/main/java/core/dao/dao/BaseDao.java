@@ -1,4 +1,4 @@
-package core.dao.utils;
+package core.dao.dao;
 
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
@@ -15,85 +15,42 @@ import org.springframework.util.StringUtils;
 
 import core.dao.entities.IEntity;
 
-public class BaseDao<E extends IEntity> implements Serializable {
-	private static final long serialVersionUID = 899460822359446551L;
-	
-	protected static final String UN_DELETED = " AND (e.deleted=FALSE OR e.deleted IS NULL)";
-	protected static final String DELETED = " AND e.deleted=TRUE";
+public class BaseDao<E extends IEntity> implements IDao, Serializable {
+	private static final long serialVersionUID = 1L;
 
 	@PersistenceContext(unitName = "persistenceUnit")
 	private EntityManager em;
 	private Class<E> persistentClass;
 
-	//@Transactional
-	public void delete(long id) {
+	public void delete(Object id) {
 		E entity = find(id);
-		remove(entity);
-		getEm().flush();
+		getEm().remove(entity);
 	}
 	
-	//@Transactional
-	public void deleteBy(String name, Object value) {
+	public long deleteBy(String name, Object value) {
 		StringBuilder strQuery = new StringBuilder(" DELETE FROM ").append(getClassName()).append(" WHERE ")
 				.append(name).append(" = ").append(formatParam(value));
 		Query query = getEm().createQuery(strQuery.toString());
-		query.executeUpdate();
+		return query.executeUpdate();
 	}
 
-	//@Transactional
-	public void deleteAllData() {
+	public long deleteAllData() {
 		String strQuery = " DELETE FROM " + getClassName();
 		Query query = getEm().createQuery(strQuery);
-		query.executeUpdate();
+		return query.executeUpdate();
 	}
 
-	//@Transactional
-	public void deleteAllData(Class<?>[] classArr) {
-		for (Class<?> entityClass : classArr) {
-			String strQuery = " DELETE FROM " + entityClass.getSimpleName();
-			Query query = getEm().createQuery(strQuery);
-			query.executeUpdate();
-		}
-	}
-
-	//@Transactional
 	public void create(E entity) {
-		persist(entity);
-		getEm().flush();
+		getEm().persist(entity);
 	}
 
-	@SuppressWarnings("unchecked")
-	//@Transactional
-	public void createMultipleRows(E... entities) {
-		for (E entity : entities) {
-			persist(entity);
-		}
-		getEm().flush();
-	}
-
-	//@Transactional
 	public void update(E entity) {
-		merge(entity);
-		getEm().flush();
+		getEm().merge(entity);
 	}
 
-	public E find(long id) {
+	public E find(Object id) {
 		return getEm().find(getPersistentClass(), id);
 	}
-
-//	public E find(long id, boolean refresh) {
-//		E persistent = getEm().find(getPersistentClass(), id);
-//		if (persistent == null) {
-//			return null;
-//		}
-//
-//		// get fresh data of entity from db
-//		if (refresh) {
-//			getEm().refresh(persistent);
-//		}
-//
-//		return persistent;
-//	}
 
 	public E find(String name, Object value) {
 		List<E> list = getAllDataByColumn(name, value);
@@ -189,72 +146,12 @@ public class BaseDao<E extends IEntity> implements Serializable {
 		return query.getResultList();
 	}
 
-	public int deleteAllDataByColumn(String name, Object value) {
-		String className = getClassName();
-		String strQuery = " DELETE FROM " + className + " e " + " WHERE e." + name + " = ?1";
-		Query query = getEm().createQuery(strQuery).setParameter(1, value);
-		return query.executeUpdate();
-	}
-
-	public int deleteAllDataByColumns(String[] names, Object[] values) {
-		String className = getClassName();
-		String strQuery = " DELETE FROM " + className + " e " + " WHERE e.";// +
-																			// name
-																			// +
-																			// "
-																			// =
-																			// ?1";
-		String andCondition = " AND e.";
-		int i = 0;
-		for (String name : names) {
-			Object value = values[i++];
-			if (value == null) {
-				strQuery += name + " is null" + andCondition;
-			} else {
-				strQuery += name + " = ?" + i + andCondition;
-			}
-		}
-
-		int endIndex = strQuery.lastIndexOf(andCondition);
-		strQuery = strQuery.substring(0, endIndex);
-
-		Query query = getEm().createQuery(strQuery);
-		int j = 0;
-		for (Object value : values) {
-			j++;
-			if (value != null) {
-				query.setParameter(j, value);
-			}
-		}
-		return query.executeUpdate();
-	}
-
-	protected void setEm(EntityManager em) {
+	public void setEm(EntityManager em) {
 		this.em = em;
 	}
 
 	public EntityManager getEm() {
 		return em;
-	}
-
-	protected E refresh(E entity) {
-		if (entity != null) {
-			getEm().refresh(entity);
-		}
-
-		return entity;
-	}
-
-	protected void remove(E entity) {
-		getEm().remove(entity);
-	}
-
-	protected void persist(E entity) {
-		getEm().persist(entity);
-	}
-
-	protected void merge(E entity) {
-		getEm().merge(entity);
 	}
 
 	protected String getClassName() {
