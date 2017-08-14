@@ -10,11 +10,7 @@ public class NativeQueryBuilder extends QueryBuilder {
 	}
 	
 	@Override
-	public Query build(EntityManager em) {
-		Query query = em.createNativeQuery(strQuery.toString());
-		for (String name : this.params.keySet()) {
-			query.setParameter(name, this.params.get(name));
-		}
-		return query;
+	protected Query createQuery(EntityManager em) {
+		return em.createNativeQuery(strQuery.toString());
 	}
 }

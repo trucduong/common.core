@@ -1,6 +1,6 @@
 package core.dao.entities;
 
-import core.dao.dto.BaseDto;
+import core.shared.dto.BaseDto;
 
 public interface IEntity {
 

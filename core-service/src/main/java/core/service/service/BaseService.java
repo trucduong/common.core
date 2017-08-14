@@ -4,11 +4,12 @@ import javax.persistence.PersistenceException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import core.common.exception.CommonException;
 import core.common.format.json.JsonFormatter;
-import core.service.invoke.ServiceHelper;
+import core.service.invoke.ServiceResultHelper;
 import core.service.invoke.ServiceResult;
 import core.service.utils.ServiceErrorCode;
 
@@ -19,19 +20,19 @@ public abstract class BaseService {
 
 	private String errorCode;
 
-	protected void init(String errcode) throws CommonException {
-		if (errcode == null) {
-			throw new CommonException(ServiceErrorCode.UNKNOW_ERROR);
-		}
-		this.errorCode = errcode;
-	}
-	
-	protected void init() throws CommonException {
-		this.init(ServiceErrorCode.UNKNOW_ERROR);
-	}
+//	protected void init(String errcode) throws CommonException {
+//		if (errcode == null) {
+//			throw new CommonException(ServiceErrorCode.UNKNOW_ERROR);
+//		}
+//		this.errorCode = errcode;
+//	}
+//	
+//	protected void init() throws CommonException {
+//		this.init(ServiceErrorCode.UNKNOW_ERROR);
+//	}
 
 	protected ServiceResult success(String value) {
-		return ServiceHelper.success(value);
+		return ServiceResultHelper.success(value);
 	}
 
 	protected ServiceResult success(Object obj) {
@@ -40,15 +41,15 @@ public abstract class BaseService {
 	}
 
 	protected ServiceResult error(String errorCode) {
-		return ServiceHelper.error(errorCode);
+		return ServiceResultHelper.error(errorCode);
 	}
 
 	protected ServiceResult error(String errorCode, String description) {
-		return ServiceHelper.error(errorCode, description);
+		return ServiceResultHelper.error(errorCode, description);
 	}
 	
 	protected ServiceResult error(String errorCode, Object description) {
-		return ServiceHelper.error(errorCode, JsonFormatter.toJson(description));
+		return ServiceResultHelper.error(errorCode, JsonFormatter.toJson(description));
 	}
 
 	@ExceptionHandler({ CommonException.class })
@@ -57,6 +58,11 @@ public abstract class BaseService {
 		//errorCode = null;
 		return error(ex.getErrCode(), ex.getMessage());
 	}
+
+	@ExceptionHandler({ MethodArgumentNotValidException.class })
+    public ServiceResult methodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        return error(ServiceErrorCode.PARAMETER_ERROR, ex.getMessage());
+    }
 
 	@ExceptionHandler({ Exception.class, PersistenceException.class })
 	public ServiceResult exception(Exception ex) {

@@ -2,199 +2,160 @@ package core.dao.dao;
 
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import javax.persistence.TypedQuery;
 
-import org.springframework.util.StringUtils;
-
+import core.common.query.PagingInfo;
+import core.common.query.SortInfo;
 import core.dao.entities.IEntity;
+import core.dao.query.QueryBuilder;
 
 public class BaseDao<E extends IEntity> implements IDao, Serializable {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	@PersistenceContext(unitName = "persistenceUnit")
-	private EntityManager em;
-	private Class<E> persistentClass;
+    @PersistenceContext(unitName = "persistenceUnit")
+    private EntityManager em;
+    private Class<E> persistentClass;
 
-	public void delete(Object id) {
-		E entity = find(id);
-		getEm().remove(entity);
-	}
-	
-	public long deleteBy(String name, Object value) {
-		StringBuilder strQuery = new StringBuilder(" DELETE FROM ").append(getClassName()).append(" WHERE ")
-				.append(name).append(" = ").append(formatParam(value));
-		Query query = getEm().createQuery(strQuery.toString());
-		return query.executeUpdate();
-	}
+    public void delete(Object id) {
+        E entity = find(id);
+        if (entity != null) {
+            getEm().remove(entity);
+        }
+    }
 
-	public long deleteAllData() {
-		String strQuery = " DELETE FROM " + getClassName();
-		Query query = getEm().createQuery(strQuery);
-		return query.executeUpdate();
-	}
+    public long deleteBy(String name, Object value) {
+        QueryBuilder builder = new QueryBuilder();
+        builder.append("DELETE FROM ").append(getClassName()).append(" WHERE ").append(name).append(" = :value",
+                "value", value);
+        Query query = builder.build(getEm());
+        return query.executeUpdate();
+    }
 
-	public void create(E entity) {
-		getEm().persist(entity);
-	}
+    public long deleteAllData() {
+        QueryBuilder builder = new QueryBuilder();
+        builder.append("DELETE FROM ").append(getClassName());
+        Query query = builder.build(getEm());
+        return query.executeUpdate();
+    }
 
-	public void update(E entity) {
-		getEm().merge(entity);
-	}
+    public void create(E entity) {
+        getEm().persist(entity);
+    }
 
-	public E find(Object id) {
-		return getEm().find(getPersistentClass(), id);
-	}
+    public E update(E entity) {
+        return getEm().merge(entity);
+    }
 
-	public E find(String name, Object value) {
-		List<E> list = getAllDataByColumn(name, value);
-		if (list.isEmpty()) {
-			return null;
-		}
-		return list.get(0);
-	}
+    public E find(Object id) {
+        return getEm().find(getPersistentClass(), id);
+    }
 
-	public E find(String[] names, Object[] values) {
-		List<E> list = getAllDataByColumns(names, values);
+    public List<E> getAllDataByColumn(String name, Object value) {
+        return getAllDataByColumn(name, value, null, null);
+    }
 
-		if (list.isEmpty()) {
-			return null;
-		}
-		return list.get(0);
-	}
+    public List<E> getAllDataByColumn(String name, Object value, SortInfo sortInfo, PagingInfo pagingInfo) {
+        List<E> list = getAllDataByColumn(name, new Object[] { value }, sortInfo, pagingInfo);
+        return list;
+    }
 
-	public List<E> getAllData() {
-		return getAllDataWithOrder(null, -1, -1);
-	}
+    public List<E> getAllData() {
+        return getAllData(null, null);
+    }
 
-	public List<E> getAllData(int firstIndex, int maxResult) {
-		return getAllDataWithOrder(null, firstIndex, maxResult);
-	}
+    public List<E> getAllDataWithPaging(PagingInfo pagingInfo) {
+        return getAllData(null, pagingInfo);
+    }
 
-	public List<E> getAllData(List<String> orderColumns) {
-		return getAllDataWithOrder(orderColumns, -1, -1);
-	}
+    public List<E> getAllDataWithSorting(SortInfo sortInfo) {
+        return getAllData(sortInfo, null);
+    }
 
-	public List<E> getAllData(String... orderColumns) {
-		return getAllDataWithOrder(Arrays.asList(orderColumns), -1, -1);
-	}
+    public List<E> getAllData(SortInfo sortInfo, PagingInfo pagingInfo) {
+        String[] empty = new String[] {};
+        return getAllDataByColumns(empty, empty, sortInfo, pagingInfo);
+    }
 
-	public void clearCache() {
-		getEm().getEntityManagerFactory().getCache().evictAll();
-		getEm().clear();
-	}
+    public void clearCache() {
+        getEm().getEntityManagerFactory().getCache().evictAll();
+        getEm().clear();
+    }
 
-	public List<E> getAllData(List<String> orderColumns, int firstIndex, int maxResult) {
-		return getAllDataWithOrder(orderColumns, firstIndex, maxResult);
-	}
+    @SuppressWarnings("unchecked")
+    public List<E> getAllDataByColumns(String[] names, Object[] values, SortInfo sortInfo, PagingInfo pagingInfo) {
+        String className = getClassName();
 
-	public List<E> getAllDataByColumn(String name, Object value, String... orderColumns) {
-		return getAllDataByColumns(new String[] { name }, new Object[] { value }, orderColumns);
-	}
+        QueryBuilder builder = new QueryBuilder().append("SELECT e FROM ").append(className).append(" e")
+                .append(" WHERE 1=1");
+        int i = 0;
+        for (String name : names) {
+            Object value = values[i++];
+            if (value == null) {
+                builder.append(" AND e.").append(name).append(" is null");
+            } else {
+                builder.append(" AND e.").append(name).append(" = :" + name, name, value);
+            }
+        }
 
-	public List<E> getAllDataByColumns(String[] names, Object[] values, String... orderColumns) {
-		Class<E> entityClass = getPersistentClass();
-		String className = getClassName();
+        if (sortInfo != null) {
+            builder.append(sortInfo);
+        }
 
-		String strQuery = "SELECT e " + "FROM " + className + " e WHERE e.";
-		String andCondition = " AND e.";
+        Query query = builder.build(getEm(), pagingInfo);
+        return query.getResultList();
+    }
 
-		int i = 0;
-		for (String name : names) {
-			Object value = values[i++];
-			if (value == null) {
-				strQuery += name + " is null" + andCondition;
-			} else {
-				strQuery += name + " = ?" + i + andCondition;
-			}
-		}
-		int endIndex = strQuery.lastIndexOf(andCondition);
-		strQuery = strQuery.substring(0, endIndex);
+    @SuppressWarnings("unchecked")
+    public List<E> getAllDataByColumn(String name, Object[] values, SortInfo sortInfo, PagingInfo pagingInfo) {
+        String className = getClassName();
 
-		if (orderColumns != null && orderColumns.length > 0) {
-			strQuery += " ORDER BY e." + StringUtils.arrayToDelimitedString(orderColumns, ", e.");
-		}
-		TypedQuery<E> query = getEm().createQuery(strQuery, entityClass);
-		int j = 0;
-		for (Object value : values) {
-			j++;
-			if (value != null) {
-				query.setParameter(j, value);
-			}
-		}
+        QueryBuilder builder = new QueryBuilder().append("SELECT e FROM ").append(className).append(" e");
+        for (int i = 0; i < values.length; i++) {
+            if (i == 0) {
+                if (values[i] == null) {
+                    builder.append(" WHERE e.").append(name).append(" is null");
+                } else {
+                    builder.append(" WHERE e.").append(name).append(" = :" + name + i, name + i, values[i]);
+                }
+            } else {
+                if (values[i] == null) {
+                    builder.append(" OR e.").append(name).append(" is null");
+                } else {
+                    builder.append(" OR e.").append(name).append(" = :" + name + i, name + i, values[i]);
+                }
+            }
+        }
 
-		return query.getResultList();
-	}
-	
-	public List<E> getAllDataByColumns(String name, Object[] values) {
-		Class<E> entityClass = getPersistentClass();
-		String className = getClassName();
+        if (sortInfo != null) {
+            builder.append(sortInfo);
+        }
 
-		String strQuery = "SELECT e " + "FROM " + className + " e";
-		
-		if (values.length > 0) {
-			strQuery += " WHERE " + name + " IN (" + org.apache.commons.lang3.StringUtils.join(values, ",") + ")";
-		}
+        Query query = builder.build(getEm(), pagingInfo);
+        return query.getResultList();
+    }
 
-		TypedQuery<E> query = getEm().createQuery(strQuery, entityClass);
-		return query.getResultList();
-	}
+    public void setEm(EntityManager em) {
+        this.em = em;
+    }
 
-	public void setEm(EntityManager em) {
-		this.em = em;
-	}
+    public EntityManager getEm() {
+        return em;
+    }
 
-	public EntityManager getEm() {
-		return em;
-	}
+    protected String getClassName() {
+        return getPersistentClass().getSimpleName();
+    }
 
-	protected String getClassName() {
-		return getPersistentClass().getSimpleName();
-	}
-
-	@SuppressWarnings("unchecked")
-	protected Class<E> getPersistentClass() {
-		if (persistentClass == null) {
-			persistentClass = (Class<E>) ((ParameterizedType) getClass().getGenericSuperclass())
-					.getActualTypeArguments()[0];
-		}
-		return persistentClass;
-	}
-
-	@SuppressWarnings("unchecked")
-	protected List<E> getAllDataWithOrder(List<String> orderColumns, int firstIndex, int maxResult) {
-		String className = getClassName();
-		String strQuery = " SELECT  e " + " FROM " + className + " e ";
-		if (orderColumns != null && orderColumns.size() > 0) {
-			strQuery += " ORDER BY e." + StringUtils.collectionToDelimitedString(orderColumns, ", e.");
-
-		}
-		Query query = getEm().createQuery(strQuery);
-
-		// apply paging
-		if (firstIndex >= 0 && maxResult > 0) {
-			query.setFirstResult(firstIndex);
-			query.setMaxResults(maxResult);
-		}
-
-		return query.getResultList();
-	}
-
-	protected Object formatParam(Object value) {
-		if (value instanceof Integer) {
-			return value;
-		} else if (value instanceof String) {
-			return new StringBuilder("'").append(value).append("'").toString();
-		} else if (value instanceof Date) {
-			return ((Date) value).getTime();
-		} else {
-			return value;
-		}
-	}
+    @SuppressWarnings("unchecked")
+    protected Class<E> getPersistentClass() {
+        if (persistentClass == null) {
+            persistentClass = (Class<E>) ((ParameterizedType) getClass().getGenericSuperclass())
+                    .getActualTypeArguments()[0];
+        }
+        return persistentClass;
+    }
 }

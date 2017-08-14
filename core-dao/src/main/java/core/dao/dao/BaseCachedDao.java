@@ -3,16 +3,14 @@ package core.dao.dao;
 import java.util.List;
 
 import javax.persistence.Query;
-import javax.persistence.TypedQuery;
 
-import org.springframework.util.StringUtils;
-
+import core.common.query.PagingInfo;
+import core.common.query.SortInfo;
 import core.dao.entities.BaseCachedEntity;
+import core.dao.query.QueryBuilder;
 
 public class BaseCachedDao<E extends BaseCachedEntity> extends BaseDao<E> {
 	private static final long serialVersionUID = 1L;
-	protected static final String UN_DELETED = " AND (e.deleted=FALSE OR e.deleted IS NULL)";
-	protected static final String DELETED = " AND e.deleted=TRUE";
 
 	@Override
 	public void delete(Object id) {
@@ -27,9 +25,11 @@ public class BaseCachedDao<E extends BaseCachedEntity> extends BaseDao<E> {
 	
 	@Override
 	public long deleteBy(String name, Object value) {
-		StringBuilder strQuery = new StringBuilder(" UPDATE ").append(getClassName()).append(" SET deleted=TRUE ").append(" WHERE ")
-				.append(name).append(" = ").append(formatParam(value));
-		Query query = getEm().createQuery(strQuery.toString());
+		QueryBuilder builder = new QueryBuilder();
+		builder.append("UPDATE ").append(getClassName())
+		.append("  SET deleted=TRUE WHERE ").append(name).append(" = :value", "value", value);
+		
+		Query query = builder.build(getEm());
 		return query.executeUpdate();
 	}
 	
@@ -48,74 +48,60 @@ public class BaseCachedDao<E extends BaseCachedEntity> extends BaseDao<E> {
 	public void hardDeleteAllData() {
 		super.deleteAllData();
 	}
-
+	
+	@SuppressWarnings("unchecked")
 	@Override
-	public List<E> getAllDataByColumns(String[] names, Object[] values, String... orderColumns) {
-		Class<E> entityClass = getPersistentClass();
+	public List<E> getAllDataByColumns(String[] names, Object[] values, SortInfo sortInfo, PagingInfo paging) {
 		String className = getClassName();
 
-		String strQuery = "SELECT e " + "FROM " + className + " e WHERE e.deleted=FALSE AND e.";
-		String andCondition = " AND e.";
-
+		QueryBuilder builder = new QueryBuilder()
+				.append("SELECT e FROM ").append(className).append(" e").append(" WHERE e.deleted=FALSE");
 		int i = 0;
 		for (String name : names) {
 			Object value = values[i++];
 			if (value == null) {
-				strQuery += name + " is null" + andCondition;
+				builder.append(" AND e.").append(name).append(" is null");
 			} else {
-				strQuery += name + " = ?" + i + andCondition;
+				builder.append(" AND e.").append(name).append(" = :"+name, name, value);
 			}
 		}
-		int endIndex = strQuery.lastIndexOf(andCondition);
-		strQuery = strQuery.substring(0, endIndex);
-
-		if (orderColumns != null && orderColumns.length > 0) {
-			strQuery += " ORDER BY e." + StringUtils.arrayToDelimitedString(orderColumns, ", e.");
-		}
-		TypedQuery<E> query = getEm().createQuery(strQuery, entityClass);
-		int j = 0;
-		for (Object value : values) {
-			j++;
-			if (value != null) {
-				query.setParameter(j, value);
-			}
-		}
-
-		return query.getResultList();
-	}
-	
-	@Override
-	public List<E> getAllDataByColumns(String name, Object[] values) {
-		Class<E> entityClass = getPersistentClass();
-		String className = getClassName();
-
-		String strQuery = "SELECT e " + "FROM " + className + " e WHERE e.deleted=FALSE";
 		
-		if (values.length > 0) {
-			strQuery += " AND " + name + " IN (" + org.apache.commons.lang3.StringUtils.join(values, ",") + ")";
+		if (sortInfo != null) {
+			builder.append(sortInfo);
 		}
-
-		TypedQuery<E> query = getEm().createQuery(strQuery, entityClass);
+		
+		Query query = builder.build(getEm(), paging);
 		return query.getResultList();
 	}
 
-	@Override
 	@SuppressWarnings("unchecked")
-	protected List<E> getAllDataWithOrder(List<String> orderColumns, int firstIndex, int maxResult) {
+	@Override
+	public List<E> getAllDataByColumn(String name, Object[] values, SortInfo sortInfo, PagingInfo paging) {
 		String className = getClassName();
-		String strQuery = " SELECT  e " + " FROM " + className + " e WHERE e.deleted=FALSE";
-		if (orderColumns != null && orderColumns.size() > 0) {
-			strQuery += " ORDER BY e." + StringUtils.collectionToDelimitedString(orderColumns, ", e.");
 
+		QueryBuilder builder = new QueryBuilder()
+				.append("SELECT e FROM ").append(className).append(" e").append(" WHERE e.deleted=FALSE");
+		for (int i = 0; i < values.length; i++) {
+            if (i == 0) {
+                if (values[i] == null) {
+                    builder.append(" WHERE e.").append(name).append(" is null");
+                } else {
+                    builder.append(" WHERE e.").append(name).append(" = :"+name+i, name+i, values[i]);
+                }
+            } else {
+                if (values[i] == null) {
+                    builder.append(" OR e.").append(name).append(" is null");
+                } else {
+                    builder.append(" OR e.").append(name).append(" = :"+name+i, name+i, values[i]);
+                }
+            }
+        }
+		
+		if (sortInfo != null) {
+			builder.append(sortInfo);
 		}
-		Query query = getEm().createQuery(strQuery);
-
-		// apply paging
-		if (firstIndex >= 0 && maxResult > 0) {
-			query.setFirstResult(firstIndex);
-			query.setMaxResults(maxResult);
-		}
-
+		
+		Query query = builder.build(getEm(), paging);
 		return query.getResultList();
 	}
 }

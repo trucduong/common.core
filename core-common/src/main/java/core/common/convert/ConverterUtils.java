@@ -1,10 +1,6 @@
 package core.common.convert;
 
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.Locale;
-
-import core.common.format.DateFormatter;
 
 public class ConverterUtils {
 	public static int toInt(Object obj, int defaultVal) {
@@ -82,18 +78,18 @@ public class ConverterUtils {
 		return toDouble(obj, 0.0);
 	}
 
-	public static Date toDate(Object obj, String format, Date defaultVal) {
-		try {
-			if (obj instanceof Date) {
-				return (Date) obj;
-			}
-			return DateFormatter.ddMMyyyy(Locale.ENGLISH, null).parse(String.valueOf(obj), defaultVal);
-		} catch (Exception e) {
-		}
-		return defaultVal;
-	}
+//	public static Date toDate(Object obj, String format, Date defaultVal) {
+//		try {
+//			if (obj instanceof Date) {
+//				return (Date) obj;
+//			}
+//			return DateFormatter.ddMMyyyy(Locale.ENGLISH, null).parse(String.valueOf(obj), defaultVal);
+//		} catch (Exception e) {
+//		}
+//		return defaultVal;
+//	}
 
-	public static Date toDate(Object obj) {
-		return toDate(obj, DateFormatter.ddMMyyyy, null);
-	}
+//	public static Date toDate(Object obj) {
+//		return toDate(obj, DateFormatter.ddMMyyyy, null);
+//	}
 }

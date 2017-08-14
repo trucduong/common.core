@@ -6,13 +6,14 @@ import java.util.Map;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 
-import core.dao.search.FieldTransformation;
-import core.dao.search.OrderInfo;
-import core.dao.search.PaggingInfo;
+import core.common.query.FieldTransformation;
+import core.common.query.PagingInfo;
+import core.common.query.SortInfo;
 
 public class QueryBuilder {
 	protected Map<String, Object> params;
 	protected StringBuilder strQuery;
+	protected PagingInfo paging;
 
 	public QueryBuilder() {
 		this.params = new HashMap<String, Object>();
@@ -35,16 +36,29 @@ public class QueryBuilder {
 		return this;
 	}
 	
-	public QueryBuilder appendSort(OrderInfo order, FieldTransformation transformer) {
+	public QueryBuilder append(SortInfo order) {
+		return append(order, "", FieldTransformation.getDefault());
+	}
+	
+	public QueryBuilder append(SortInfo order, String prefix) {
+		return append(order, prefix, FieldTransformation.getDefault());
+	}
+	
+	public QueryBuilder append(SortInfo order, String prefix, FieldTransformation transformer) {
 		if (order != null && !order.isEmpty()) {
 			strQuery.append(" ORDER BY ");
 			for (String field : order.getFields()) {
-				strQuery.append(transformer.transform(field)).append(" ")
+				strQuery.append(prefix + transformer.transform(field)).append(" ")
 				.append(order.getOrder(field)).append(",");
 			}
-			strQuery.deleteCharAt(strQuery.length());
+			strQuery.deleteCharAt(strQuery.length()-1);
 		}
 		
+		return this;
+	}
+	
+	public QueryBuilder setPaging(PagingInfo paging) {
+		this.paging = paging;
 		return this;
 	}
 
@@ -54,18 +68,23 @@ public class QueryBuilder {
 	}
 
 	public Query build(EntityManager em) {
-		Query query = em.createQuery(strQuery.toString());
+		return build(em, paging);
+	}
+	
+	protected Query createQuery(EntityManager em) {
+		return em.createQuery(strQuery.toString());
+	}
+	
+	public Query build(EntityManager em, PagingInfo paging) {
+		Query query = createQuery(em);
 		for (String name : this.params.keySet()) {
 			query.setParameter(name, this.params.get(name));
 		}
-		return query;
-	}
-	
-	public Query build(EntityManager em, PaggingInfo paging) {
-		Query query = build(em);
 		
-		query.setFirstResult(paging.getFirstRowIndex());
-		query.setMaxResults(paging.getNumberRowsOfPage());
+		if (paging != null) {
+			query.setFirstResult(paging.getFirstIndex());
+			query.setMaxResults(paging.getMaxRecord());
+		}
 		
 		return query;
 	}

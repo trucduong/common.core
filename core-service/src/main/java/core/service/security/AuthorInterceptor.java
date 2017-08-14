@@ -42,6 +42,9 @@ public class AuthorInterceptor extends HandlerInterceptorAdapter {
 //			throw new CommonException(ServiceErrorCode.ACCESS_DENIED, "User do not have permission to access!");
 //		}
 		
+		// TODO: get user
+		//AuthContext.setCurrentUser(user);
+		
 		return true;
 	}
 }

@@ -1,0 +1,68 @@
+https://dzone.com/articles/beginner%E2%80%99s-guide-jpa-and
+CASCADE TYPE
+
+#### One-To-One ####
+@Entity
+public class Post {
+@OneToOne(mappedBy = "post",
+        cascade = CascadeType.ALL, orphanRemoval = true)
+    private PostDetails details;
+}
+
+@Entity
+public class PostDetails {
+@OneToOne
+    @PrimaryKeyJoinColumn
+    private Post post;
+}
+
+#### One-To-Many ####
+@Entity
+public class Post {
+@OneToMany(cascade = CascadeType.ALL, 
+        mappedBy = "post", orphanRemoval = true)
+    private List<Comment> comments = new ArrayList<>();
+}
+
+@Entity
+public class Comment {
+ @ManyToOne
+    private Post post;
+}
+
+#### Many-To-Many ####
+@Entity
+public class Author {
+@ManyToMany(mappedBy = "authors", 
+        cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private List<Book> books = new ArrayList<>();
+    }
+
+@Entity
+public class Book {
+
+    @Id
+    @GeneratedValue(strategy=GenerationType.AUTO)
+    private Long id;
+
+    @Column(name = "title", nullable = false)
+    private String title;
+
+    @ManyToMany(cascade = 
+        {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(name = "Book_Author",
+        joinColumns = {
+            @JoinColumn(
+                name = "book_id", 
+                referencedColumnName = "id"
+            )
+        },
+        inverseJoinColumns = {
+            @JoinColumn(
+                name = "author_id", 
+                referencedColumnName = "id"
+            )
+        }
+    )
+    private List<Author> authors = new ArrayList<>();
+}

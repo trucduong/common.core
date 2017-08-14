@@ -1,5 +1,6 @@
-package core.dao.search;
+package core.common.query;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public abstract class FieldTransformation {
@@ -13,5 +14,14 @@ public abstract class FieldTransformation {
 		}
 		
 		return field;
+	}
+	
+	public static FieldTransformation getDefault() {
+		return new FieldTransformation() {
+			@Override
+			protected Map<String, String> getFieldMappings() {
+				return new HashMap<String, String>();
+			}
+		};
 	}
 }
